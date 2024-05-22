@@ -71,7 +71,6 @@ def get_resource_id(dict_to_search):
 
 
 def lambda_handler(event, context):
-    print(event)
     findings = []
     for record in event["Records"]:
         msg = json.loads(record["body"])
