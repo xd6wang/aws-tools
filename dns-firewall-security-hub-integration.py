@@ -88,7 +88,7 @@ def lambda_handler(event, context):
                 "Types": DEFAULT_TYPES,
                 "ProductArn": PRODUCT_ARN,
                 "GeneratorId": msg["source"],
-                "Id": msg["id"],
+                "Id": detail['id'] if 'id' in detail.keys() else msg["id"],
                 "Resources": [
                     {
                         "Type": "Other", 
