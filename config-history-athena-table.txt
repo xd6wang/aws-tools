@@ -1,0 +1,74 @@
+CREATE EXTERNAL TABLE aws_config_history (
+ fileversion STRING,
+ configurationitems ARRAY < STRUCT <
+        relatedevents : ARRAY < STRING >,
+        relationships : ARRAY < STRUCT <
+            resourceid : STRING,
+            resourcetype : STRING,
+            name : STRING > >,
+        supplementaryconfiguration : MAP <STRING, STRING>,
+        tags: MAP <STRING, STRING>,
+        configurationitemversion : STRING,
+        configurationitemcapturetime : STRING,
+        configurationstateid : BIGINT,
+        awsAccountid : STRING,
+        configurationitemstatus : STRING,
+        resourcetype : STRING,
+        resourceid : STRING,
+        awsregion : STRING,
+        configurationstatemd5hash : STRING,
+        configuration : STRING > >
+) 
+PARTITIONED BY ( accountid STRING, region STRING, year string, month string, day string)
+ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe' 
+WITH SERDEPROPERTIES ( 
+  'case.insensitive'='false',
+  'mapping.fileversion'='fileVersion',
+  'mapping.configsnapshotid'='configSnapshotId',
+  'mapping.configurationitems'='configurationItems',
+  'mapping.relatedevents'='relatedEvents',
+  'mapping.resourceid'='resourceId',
+  'mapping.resourcetype'='resourceType',
+  'mapping.supplementaryconfiguration'='supplementaryConfiguration',
+  'mapping.configurationitemversion'='configurationItemVersion',
+  'mapping.configurationitemcapturetime'='configurationItemCaptureTime',
+  'mapping.configurationstateid'='configurationStateId',
+  'mapping.awsaccountid'='awsAccountId',
+  'mapping.configurationitemstatus'='configurationItemStatus',
+  'mapping.resourcetype'='resourceType',
+  'mapping.resourceid'='resourceId',
+  'mapping.awsregion'='awsRegion',
+  'mapping.configurationstatemd5hash'='configurationStateMd5Hash'
+    )
+LOCATION 's3://config-bucket-xxxxxxxx/AWSLogs/'
+TBLPROPERTIES (
+  'projection.enabled'='true', 
+  'projection.day.type'='integer',
+  'projection.day.range'='1,31',
+  'projection.month.type'='integer',
+  'projection.month.range'='1,12',
+  'projection.year.type'='integer',
+  'projection.year.range'='2021,2024',
+  'projection.accountid.type'='enum',
+  'projection.accountid.values'='xxxxxxx',
+  'projection.region.type'='enum',
+  'projection.region.values'='us-east-1,us-east-2,us-west-1,us-west-2,ap-east-1,ap-south-1,ap-northeast-3,ap-northeast-2,ap-southeast-1,ap-southeast-2,ap-northeast-1,ca-central-1,eu-central-1,eu-west-1,eu-west-2,eu-west-3,eu-north-1,sa-east-1',
+  'storage.location.template'='s3://config-bucket-xxxxxx/AWSLogs/${accountid}/Config/${region}/${year}/${month}/${day}/ConfigHistory/'
+)
+
+# List CI count by resourcetype
+SELECT item.resourcetype, count(item.resourcetype) FROM "default"."aws_config_history" CROSS JOIN UNNEST(configurationitems) as t(item) where year='2024' and month='4' and region='us-east-1' group by item.resourcetype;
+
+
+# List CI of a specific resource type
+SELECT item.relatedevents, item.relationships, item.supplementaryconfiguration, item.tags, item.configurationitemversion, item.configurationitemcapturetime, item.configurationstateid, item.awsAccountid, item.configurationitemstatus, item.resourcetype, item.resourceid, item.configuration  FROM "default"."aws_config_history" CROSS JOIN UNNEST(configurationitems) as t(item) where year='2024' and month='4' and region='us-east-1' and item.resourcetype='AWS::EC2::NetworkInterface'
+
+# List CI count by networkinterface "configuration.description": "string"
+SELECT json_extract(item.configuration, '$.description') AS description, count(*) FROM "default"."aws_config_history" CROSS JOIN UNNEST(configurationitems) as t(item) where year='2024' and month='4' and region='us-east-1' and item.resourcetype='AWS::EC2::NetworkInterface' group by json_extract(item.configuration, '$.description')
+# also try $.requesterId
+# more resource porperties are listed here: https://github.com/awslabs/aws-config-resource-schema/blob/master/config/properties/resource-types/AWS%3A%3AEC2%3A%3ANetworkInterface.properties.json
+
+
+# List unnested relationships of CIs of a specific resource type
+with dataset as (SELECT item.relationships as relationships FROM "default"."aws_config_history" CROSS JOIN UNNEST(configurationitems) as t(item) where year='2024' and month='4' and region='us-east-1' and item.resourcetype='AWS::EC2::NetworkInterface')
+select relation.resourcetype,count(relation.resourcetype) from dataset cross join unnest(relationships) as t(relation) group by relation.resourcetype
