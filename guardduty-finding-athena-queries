@@ -1,0 +1,40 @@
+# DNS QUERY
+
+SELECT 
+json_extract(service, '$.eventfirstseen') as eventfirstseen,
+json_extract(service, '$.eventlastseen') as eventlastseen,
+json_extract(resource, '$.instancedetails.instanceid') as instanceid,
+description,
+type,
+severity,
+json_extract(service, '$.action.actiontype') as action_type,
+json_extract(service, '$.action.dnsrequestaction.domain') as domain,
+json_extract(service, '$.action.dnsrequestaction.protocol') as protocol,
+json_extract(service, '$.count') as count
+FROM "default"."guardduty_logs" where CAST(json_extract(service, '$.action.actiontype') AS VARCHAR) = 'DNS_REQUEST';
+
+
+# Network Connection Query
+
+SELECT 
+json_extract(service, '$.eventfirstseen') as eventfirstseen,
+json_extract(service, '$.eventlastseen') as eventlastseen,
+json_extract(resource, '$.instancedetails.instanceid') as instanceid,
+description,
+type,
+severity,
+json_extract(service, '$.action.actiontype') as action_type,
+json_extract(service, '$.action.networkconnectionaction.connectiondirection') as connectiondirection,
+json_extract(service, '$.action.networkconnectionaction.localportdetails.port') as localport,
+json_extract(service, '$.action.networkconnectionaction.localipdetails.ipaddressv4') as localipv4,
+json_extract(service, '$.action.networkconnectionaction.localipdetails.ipaddressv6') as localipv6,
+json_extract(service, '$.action.networkconnectionaction.localnetworkinterface') as localnetworkinterface,
+json_extract(service, '$.action.networkconnectionaction.remoteportdetails.port') as localport,
+json_extract(service, '$.action.networkconnectionaction.remoteipdetails.ipaddressv4') as localipv4,
+json_extract(service, '$.action.networkconnectionaction.remoteipdetails.ipaddressv6') as localipv6,
+json_extract(service, '$.action.networkconnectionaction.blocked') as blocked,
+json_extract(service, '$.action.networkconnectionaction.protocol') as protocol,
+json_extract(service, '$.count') as count
+FROM "default"."guardduty_logs" where CAST(json_extract(service, '$.action.actiontype') AS VARCHAR) = 'NETWORK_CONNECTION';
+
+
