@@ -4,6 +4,8 @@ SELECT
 json_extract(service, '$.eventfirstseen') as eventfirstseen,
 json_extract(service, '$.eventlastseen') as eventlastseen,
 json_extract(resource, '$.instancedetails.instanceid') as instanceid,
+json_extract(resource, '$.instancedetails.networkinterfaces[0].privateipaddress') as privateipaddr,
+json_extract(resource, '$.instancedetails.networkinterfaces[0].publicip') as publicipaddr,
 description,
 type,
 severity,
@@ -12,6 +14,7 @@ json_extract(service, '$.action.dnsrequestaction.domain') as domain,
 json_extract(service, '$.action.dnsrequestaction.protocol') as protocol,
 json_extract(service, '$.count') as count
 FROM "default"."guardduty_logs" where CAST(json_extract(service, '$.action.actiontype') AS VARCHAR) = 'DNS_REQUEST';
+
 
 
 # Network Connection Query
